@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CR/LR LOGIN | CSE-5</title>
+    <style>
+        :root {
+            --admin-dark: #1a1a1a;
+            --admin-blue: #003366;
+            --accent-gold: #ff9933;
+        }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; margin: 0; 
+            background: #f0f2f5; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        .gov-strip { background: #000; color: #fff; font-size: 12px; padding: 8px 10%; text-align: center; }
+        
+        .login-container { 
+            margin: auto; width: 100%; max-width: 400px; background: white; 
+            padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-top: 5px solid var(--admin-blue);
+        }
+        h2 { color: var(--admin-blue); text-align: center; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #555; }
+        input { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn-admin { 
+            width: 100%; padding: 14px; background: var(--admin-blue); color: white; 
+            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;
+        }
+        .btn-admin:hover { background: #002244; }
+        #errorBox { color: #d9534f; font-size: 13px; text-align: center; margin-top: 15px; display: none; }
+        .back-link { text-align: center; margin-top: 20px; font-size: 14px; }
+        .back-link a { color: var(--admin-blue); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">RESTRICTED AREA: RESTRICTED FOR STUDENTS </div>
+
+    <div class="login-container">
+        <h2>CR/LR Authentication</h2>
+        <form id="adminLoginForm">
+            <div class="input-group">
+                <label>CR/LR EMAIL</label>
+                <input type="email" id="email" placeholder="official.name@university.com" required>
+            </div>
+            <div class="input-group">
+                <label>SECURE PASSWORD</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-admin">VERIFY & ENTER</button>
+            <div id="errorBox"></div>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">← Return to Home Page</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // --- AUTHORIZED LIST ---
+        const AUTHORIZED_ADMINS = [
+            "allubalaji12@gmail.com", 
+            "cr2007@aol.com",
+            "lr2007@aol.com"
+        ];
+
+        const form = document.getElementById('adminLoginForm');
+        const errorBox = document.getElementById('errorBox');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            errorBox.style.display = "none";
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Step 1: Check if email is in the admin list BEFORE hitting Firebase
+            if (!AUTHORIZED_ADMINS.includes(email)) {
+                errorBox.innerText = "No Access: You are not CR/LR";
+                errorBox.style.display = "block";
+                return;
+            }
+
+            // Step 2: Proceed with Authentication
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    // Success: Redirect to the main admin control page
+                    window.location.href = "admin.html";
+                })
+                .catch((error) => {
+                    errorBox.innerText = "Invalid credentials. Incident has been logged.";
+                    errorBox.style.display = "block";
+                });
+        });
+    </script>
+</body>
+</html>

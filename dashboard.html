@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal | Andhra University | CSE-5</title>
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --secondary-blue: #0056b3;
+            --accent-gold: #ff9933;
+            --light-gray: #f4f4f4;
+            --gov-dark: #222;
+            --danger-red: #cc0000;
+            --success-green: #28a745;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--light-gray); color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Loader */
+        #loader { position: fixed; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Banner */
+        #notificationBanner { background: #fff3cd; color: #856404; padding: 15px 10%; border-bottom: 2px solid #ffeeba; display: none; text-align: center; font-weight: bold; }
+
+        .gov-strip { background: var(--gov-dark); color: white; font-size: 12px; padding: 8px 10%; display: flex; justify-content: space-between; }
+        header { background: var(--primary-blue); color: white; padding: 20px 10%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--accent-gold); }
+
+        .container { display: grid; grid-template-columns: 300px 1fr; gap: 25px; padding: 25px 10%; flex: 1; }
+
+        .sidebar { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); height: fit-content; }
+        .profile-img { width: 80px; height: 80px; background: var(--primary-blue); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; font-weight: bold; }
+        
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 4px solid var(--primary-blue); }
+        
+        /* Attendance Progress Bar Styles */
+        .progress-container { background: #e9ecef; border-radius: 10px; height: 20px; margin: 15px 0; overflow: hidden; border: 1px solid #ddd; }
+        .progress-bar { height: 100%; width: 0%; transition: width 1s ease-in-out; background: var(--primary-blue); }
+
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        th { background: #f8f9fa; color: var(--primary-blue); }
+
+        /* Footer */
+        footer { background: var(--gov-dark); color: white; padding: 30px 10%; text-align: center; font-size: 13px; margin-top: auto; }
+        
+        .btn { background: var(--primary-blue); color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%; text-decoration: none; display: inline-block; text-align: center; box-sizing: border-box; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary-blue); color: var(--primary-blue); margin-top: 10px; }
+
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center; }
+        .modal-content { background:white; padding:30px; border-radius:8px; width:400px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="loader"><div class="spinner"></div></div>
+
+    <div id="notificationBanner">📢 <span id="notifText">--</span></div>
+
+    <div class="gov-strip">
+        <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A)</span>
+        <span id="sessionTimer">Session Expires in: 05:00</span>
+        <body onmousemove="resetTimer()" onclick="resetTimer()"></body>
+    </div>
+
+    <header>
+        <div>
+            <h1 style="margin:0;">Student Portal</h1>
+            <small>Government of Andhra Pradesh | CSE-5</small>
+        </div>
+        <button id="logoutBtn" style="background:transparent; border:1px solid white; color:white; padding:8px 15px; cursor:pointer; border-radius:4px;">Secure Logout</button>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="profile-img" id="initials">?</div>
+            <h3 id="sideName" style="text-align:center; margin-bottom:5px;">---</h3>
+            <p id="sideRoll" style="text-align:center; color: #666; font-size: 13px; margin-top:0;">Roll: ---</p>
+            <hr>
+            <p><strong>Email:</strong> <br><span id="sideEmail" style="font-size:12px;">-</span></p>
+            <p><strong>Phone:</strong> <br><span id="sidePhone" style="font-size:12px;">-</span></p>
+            <button class="btn btn-outline" onclick="openEditModal()">Edit Profile</button>
+        </aside>
+
+        <main>
+            <div class="card">
+                <h2>Attendance Analytics</h2>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="font-size: 35px; font-weight: bold; color: var(--primary-blue);" id="attPercent">0%</div>
+                    <div style="font-size: 13px; color: #666;" id="attCount">Present: 0/0</div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="attBar"></div>
+                </div>
+
+                <a href="attendance-report.html" class="btn">View Detailed Academic Report</a>
+            </div>
+
+            <div class="card">
+                <h2>Today's Timetable</h2>
+                <table>
+                    <thead><tr><th>Time</th><th>Subject</th><th>Venue</th></tr></thead>
+                    <tbody id="timetableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Pending Fee Demands</h2>
+                <div id="paymentDisplayArea"><p style="color:#888;">No pending fee records.</p></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Update Profile</h3>
+            <input type="text" id="editRoll" readonly>
+            <input type="text" id="editName" placeholder="Full Name">
+            <input type="text" id="editPhone" placeholder="Phone Number">
+            <button class="btn" id="saveProfileBtn">Update Records</button>
+            <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 AUCE(A) CSE 3. All Rights Reserved.</p>
+        <p style="opacity: 0.7; font-size: 11px;"> Batch (2025-2029) | Designed for students</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentRoll = "";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                fetchGlobalNotice();
+                const q = query(collection(db, "students"), where("email", "==", user.email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const data = snap.docs[0].data();
+                    currentRoll = data.rollNo;
+                    
+                    document.getElementById('sideName').innerText = data.name;
+                    document.getElementById('sideRoll').innerText = "Roll: " + currentRoll;
+                    document.getElementById('sideEmail').innerText = user.email;
+                    document.getElementById('sidePhone').innerText = data.phone || "Not Set";
+                    document.getElementById('initials').innerText = data.name.charAt(0).toUpperCase();
+
+                    loadAttendance(currentRoll);
+                    loadPayments(currentRoll);
+                    loadTimetable();
+                    document.getElementById('loader').style.display = 'none';
+                }
+            } else { window.location.href = "login.html"; }
+        });
+
+        // RESTORED PROGRESS BAR LOGIC
+        async function loadAttendance(roll) {
+            const q = query(collection(db, "attendance"), where("studentRoll", "==", roll));
+            const snap = await getDocs(q);
+            let p = 0, t = 0;
+            snap.forEach(d => { t++; if(d.data().status === "Present") p++; });
+            
+            if(t > 0) {
+                const pct = Math.round((p/t)*100);
+                document.getElementById('attPercent').innerText = pct + "%";
+                document.getElementById('attCount').innerText = `Present: ${p}/${t}`;
+                const bar = document.getElementById('attBar');
+                bar.style.width = pct + "%";
+                bar.style.backgroundColor = pct < 75 ? "#cc0000" : "#28a745";
+            }
+        }
+
+        function loadTimetable() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = days[new Date().getDay()];
+            const sched = {
+                'Monday': [{t:'09:00', s:'Data Structures', v:'LH-1'}, {t:'11:00', s:'Discrete Maths', v:'LH-2'}],
+                'Tuesday': [{t:'09:00', s:'DBMS', v:'Lab-1'}, {t:'02:00', s:'Operating Systems', v:'LH-1'}],
+                'Wednesday': [{t:'10:00', s:'TOC', v:'LH-2'}],
+                'Thursday': [{t:'09:00', s:'Networks', v:'LH-1'}, {t:'11:00', s:'Software Eng.', v:'LH-3'}],
+                'Friday': [{t:'09:00', s:'AI & ML', v:'LH-2'}]
+            };
+            const list = sched[today] || [{t:'-', s:'No Session', v:'-'}];
+            document.getElementById('timetableBody').innerHTML = list.map(c => `<tr><td>${c.t}</td><td><b>${c.s}</b></td><td>${c.v}</td></tr>`).join('');
+        }
+
+        async function fetchGlobalNotice() {
+            onSnapshot(doc(db, "admin_settings", "notifications"), (docSnap) => {
+                const banner = document.getElementById('notificationBanner');
+                if (docSnap.exists() && docSnap.data().message) {
+                    document.getElementById('notifText').innerText = docSnap.data().message;
+                    banner.style.display = 'block';
+                } else { banner.style.display = 'none'; }
+            });
+        }
+
+       function loadPayments(roll) {
+    const q = query(collection(db, "payments"), where("studentRoll", "in", [roll, "ALL"]));
+    onSnapshot(q, (snap) => {
+        const area = document.getElementById('paymentDisplayArea');
+        area.innerHTML = "";
+        snap.forEach(docSnap => {
+            const p = docSnap.data();
+            const pId = docSnap.id;
+            
+            let actionHtml = '';
+            if (p.status === "Unpaid") {
+                // Creates a standard UPI Deep Link
+                const upiLink = `upi://pay?pa=${p.upiId}&pn=Admin&am=${p.amount}&cu=INR`;
+                actionHtml = `<button class="btn" onclick="initiatePayment('${pId}', '${upiLink}')">Pay via UPI</button>`;
+            } else if (p.status === "Pending Approval") {
+                actionHtml = `<p style="color:orange;">⏳ Payment submitted. Awaiting Admin verification.</p>`;
+            } else if (p.status === "Rejected") {
+                actionHtml = `<p style="color:red;">❌ Rejected: ${p.rejectReason || 'Invalid transaction'}</p>
+                              <button class="btn btn-outline" onclick="initiatePayment('${pId}')">Try Again</button>`;
+            } else if (p.status === "Paid") {
+                actionHtml = `<button class="btn" style="background:green;" onclick="downloadReceipt('${pId}')">Download Bill</button>`;
+            }
+
+            area.innerHTML += `
+                <div class="card" style="border-left: 5px solid var(--accent-gold);">
+                    <h4>${p.description}</h4>
+                    <p>Amount: ₹${p.amount} | Status: <b>${p.status}</b></p>
+                    ${actionHtml}
+                </div>`;
+        });
+    });
+}
+window.initiatePayment = async (docId, upiLink) => {
+    window.location.href = upiLink; // Redirects to PhonePe/GPay
+    // Update status to pending so admin sees it
+    await updateDoc(doc(db, "payments", docId), { status: "Pending Approval" });
+    alert("Please complete the payment in your UPI app and wait for Admin approval.");
+};
+
+        window.openEditModal = () => {
+            document.getElementById('editRoll').value = currentRoll;
+            document.getElementById('editName').value = document.getElementById('sideName').innerText;
+            document.getElementById('editPhone').value = document.getElementById('sidePhone').innerText;
+            document.getElementById('editModal').style.display = 'flex';
+        };
+        window.closeEditModal = () => document.getElementById('editModal').style.display = 'none';
+
+        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+            try {
+                await updateDoc(doc(db, "students", currentRoll), {
+                    name: document.getElementById('editName').value,
+                    phone: document.getElementById('editPhone').value
+                });
+                alert("Profile Updated Successfully!");
+                location.reload();
+            } catch (e) { alert("Error: " + e.message); }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = "login.html"));
+    // --- FIXED SESSION TIMER LOGIC ---
+let timeRemaining = 300; // 5 Minutes in seconds
+const timerDisplay = document.getElementById('sessionTimer');
+
+function updateTimerUI() {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    
+    // Update the text in the gov-strip
+    if (timerDisplay) {
+        timerDisplay.innerText = `Session Expires: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // When time runs out
+    if (timeRemaining <= 0) {
+        clearInterval(sessionInterval);
+        alert("Your session has expired for security reasons. Please login again.");
+        signOut(auth).then(() => {
+            window.location.href = "login.html";
+        });
+    }
+    timeRemaining--;
+}
+
+// Function to reset timer when user moves mouse or clicks
+window.resetTimer = () => {
+    timeRemaining = 300; 
+};
+
+// Start the countdown
+const sessionInterval = setInterval(updateTimerUI, 1000);
+
+// Add event listeners to the body to detect activity
+document.body.addEventListener('mousemove', resetTimer);
+document.body.addEventListener('keypress', resetTimer);
+document.body.addEventListener('click', resetTimer);
+    </script>
+</body>
+</html>

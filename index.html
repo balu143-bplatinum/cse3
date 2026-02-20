@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSE 3 OFFICIAL</title>
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --secondary-blue: #0056b3;
+            --accent-orange: #ff9933;
+            --light-gray: #f4f4f4;
+            --text-dark: #333;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+
+        /* Top Header Strip */
+        .gov-strip {
+            background: #222;
+            color: white;
+            font-size: 12px;
+            padding: 5px 10%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Main Header */
+        header {
+            background: white;
+            padding: 20px 10%;
+            display: flex;
+            align-items: center;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--primary-blue);
+            padding: 0 10%;
+            display: flex;
+        }
+
+        nav a {
+            color: white;
+            padding: 15px 20px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        nav a:hover {
+            background: var(--secondary-blue);
+        }
+
+        /* Notice Ticker */
+        .ticker {
+            background: var(--accent-orange);
+            color: white;
+            padding: 8px 10%;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0,51,102,0.7), rgba(0,51,102,0.7)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&w=1000&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        /* Main Content Grid */
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            padding: 40px 10%;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 10px;
+            color: var(--primary-blue);
+        }
+
+        footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        /* Quick Links List */
+        .links-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .links-list li {
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .links-list li a {
+            color: var(--secondary-blue);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">
+        <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A) | Government of AP</span>
+        <span>Skip to main content | A- | A | A+</span>
+    </div>
+
+    <header>
+        <div class="logo"></div>
+        <div class="header-text">
+            <h1>Computer Science and Engineering - 2025 - 2029</h1>
+            <small>CSE - 3</small>
+        </div>
+    </header>
+
+    <nav>
+        <a href="#">Home</a>
+        <a href="#">About Us</a>
+        
+    </nav>
+
+    <div class="ticker">
+        LATEST:This site is underdevelopment
+    </div>
+
+    <section class="hero">
+        <div>
+            <h1>Entering in CSE Official</h1>
+            <p>Computer science and system Engineering</p>
+        </div>
+    </section>
+
+    <div class="container">
+        <main class="card">
+            <h2>Welcome to CSE - 3 Official</h2>
+            <p>This is the webpage of official class CSE-5 Of Batch 2025 - 29</p>
+            <p>This class consists of 80 students</p>
+        </main>
+
+        <aside>
+            <div class="card">
+                <h2>Important Links</h2>
+                <ul class="links-list">  
+                    <li><a href="login.html">» Student Portal Login</a></li>
+                    <li><a href="admin_login.html">» CR / LR Login</a></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 CSE-3 Official. All Rights Reserved.</p>
+        <p>Website Maintained by CSE students</p>
+    </footer>
+
+</body>
+</html>

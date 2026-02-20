@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> CSE-3 CR/LR ATTENDANCE MARKING</title>
+    <style>
+        :root { 
+            --primary: #003366; 
+            --accent: #ff9933; 
+            --bg: #f4f4f4; 
+            --gov-dark: #222; 
+            --success: #d1e7dd;
+            --warning: #fff3cd;
+            --danger: #f8d7da;
+        }
+        
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; display: none; color: #333; }
+        
+        .gov-strip { background: var(--gov-dark); color: white; font-size: 12px; padding: 10px 10%; display: flex; justify-content: space-between; }
+        header { background: var(--primary); color: white; padding: 20px 10%; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        
+        .container { padding: 30px 10%; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 20px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; font-size: 14px; }
+        th { background: #f8f9fa; color: var(--primary); }
+
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.3s; width: 100%; }
+        .btn:hover { background: #002244; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .status-msg { padding: 15px; border-radius: 4px; margin-bottom: 20px; display: none; font-weight: bold; text-align: center; border: 1px solid; }
+        .alert-error { background: var(--danger); color: #721c24; border-color: #f5c6cb; }
+
+        /* Stats Styles */
+        .stats-search-box { background: #eef6ff; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; }
+        .eligibility-banner { margin-top: 20px; padding: 15px; font-weight: bold; text-align: center; border-radius: 6px; font-size: 16px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        
+        .status-eligible { background: var(--success); color: #0f5132; }
+        .status-condonation { background: var(--warning); color: #856404; }
+        .status-detained { background: var(--danger); color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">
+        <span>CSE 3 | ATTENDANCE & ELIGIBILITY SYSTEM</span>
+        <span id="sessionTimer">Session Expires: 05:00</span>
+    </div>
+
+    <header>
+        <h1>Attendance Management</h1>
+        <a href="admin.html" style="color: white; text-decoration: none; border: 1px solid; padding: 8px 15px; border-radius: 4px; font-size: 14px;">← Control Center</a>
+    </header>
+
+    <div class="container">
+        
+        <div class="card">
+            <h2>Individual Student Report</h2>
+            <div class="stats-search-box">
+                <label style="font-weight:bold;">Search by Registration Number</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="statsSearchRoll" placeholder="e.g., 25CSE01" style="flex:1; padding:12px; border-radius:4px; border:1px solid #ccc;">
+                    <button class="btn" id="searchStatsBtn" style="width:180px;">Generate Report</button>
+                </div>
+
+                <div id="individualStatsResult" style="margin-top: 25px; display: none; background: white; padding: 20px; border-radius: 6px; border: 1px solid #ddd;">
+                    <h3 id="resStudentName" style="margin-top:0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px;">Student Name</h3>
+                    
+                    <table id="subjectBreakdownTable">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Classes Conducted</th>
+                                <th>Classes Present</th>
+                                <th>Percentage</th>
+                                <th>Current Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjectBreakdownBody"></tbody>
+                    </table>
+
+                    <div id="eligibilityStatus" class="eligibility-banner"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Mark Daily Attendance</h2>
+            <div class="controls">
+                <div>
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">Subject</label>
+                    <select id="subjectSelect" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc;">
+                        <option>Data Structures</option>
+                        <option>Mathematics-II</option>
+                        <option>Physics</option>
+                        <option>EEE</option>
+                        <option>Digital Logic Design</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">Date</label>
+                    <input type="date" id="attDate" style="width:100%; padding:9px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+            </div>
+
+            <div id="duplicateAlert" class="status-msg alert-error">
+                ⚠️ Attendance already marked for this subject on this date. Entry Locked.
+            </div>
+
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Roll Number</th>
+                        <th style="width: 45%;">Student Name</th>
+                        <th style="width: 15%;">Present</th>
+                        <th style="width: 15%;">Absent</th>
+                    </tr>
+                </thead>
+                <tbody id="studentList"></tbody>
+            </table>
+
+            <button class="btn" id="saveAttendanceBtn" style="margin-top: 25px;">Finalise and Submit Attendance</button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const AUTHORIZED_ADMINS = ["allubalaji12@gmail.com", "cr2007@aol.com", "lr2007@aol.com"]; 
+
+        document.getElementById('attDate').valueAsDate = new Date();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && AUTHORIZED_ADMINS.includes(user.email)) {
+                document.body.style.display = "block";
+                await loadStudents();
+                await checkDuplicate();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // 1. DUPLICATE CHECK
+        async function checkDuplicate() {
+            const sub = document.getElementById('subjectSelect').value;
+            const date = document.getElementById('attDate').value;
+            const btn = document.getElementById('saveAttendanceBtn');
+            const alertBox = document.getElementById('duplicateAlert');
+            
+            const q = query(collection(db, "attendance"), where("subject", "==", sub), where("date", "==", date));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                btn.disabled = true;
+                alertBox.style.display = "block";
+                document.getElementById('studentList').style.opacity = "0.3";
+            } else {
+                btn.disabled = false;
+                alertBox.style.display = "none";
+                document.getElementById('studentList').style.opacity = "1";
+            }
+        }
+
+        document.getElementById('subjectSelect').addEventListener('change', checkDuplicate);
+        document.getElementById('attDate').addEventListener('change', checkDuplicate);
+
+        // 2. LOAD STUDENTS
+        async function loadStudents() {
+            const q = query(collection(db, "students"), orderBy("rollNo", "asc"));
+            const snap = await getDocs(q);
+            const list = document.getElementById('studentList');
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const s = doc.data();
+                list.innerHTML += `<tr data-roll="${s.rollNo}">
+                    <td><b>${s.rollNo}</b></td><td>${s.name}</td>
+                    <td><input type="radio" name="st_${s.rollNo}" value="Present" checked></td>
+                    <td><input type="radio" name="st_${s.rollNo}" value="Absent"></td>
+                </tr>`;
+            });
+        }
+
+        // 3. GENERATE SUBJECT-WISE REPORT
+        document.getElementById('searchStatsBtn').addEventListener('click', async () => {
+            const roll = document.getElementById('statsSearchRoll').value.trim().toUpperCase();
+            if (!roll) { alert("Enter Roll No."); return; }
+
+            const studentSnap = await getDocs(query(collection(db, "students"), where("rollNo", "==", roll)));
+            if (studentSnap.empty) { alert("Not Found."); return; }
+            
+            const studentName = studentSnap.docs[0].data().name;
+            const attSnap = await getDocs(query(collection(db, "attendance"), where("studentRoll", "==", roll)));
+            
+            const subjectStats = {}; 
+
+            attSnap.forEach(d => {
+                const a = d.data();
+                if (!subjectStats[a.subject]) subjectStats[a.subject] = { conducted: 0, present: 0 };
+                subjectStats[a.subject].conducted++;
+                if (a.status === "Present") subjectStats[a.subject].present++;
+            });
+
+            const tableBody = document.getElementById('subjectBreakdownBody');
+            tableBody.innerHTML = "";
+            let grandConducted = 0, grandPresent = 0;
+
+            for (const [sub, data] of Object.entries(subjectStats)) {
+                const pct = Math.round((data.present / data.conducted) * 100);
+                grandConducted += data.conducted;
+                grandPresent += data.present;
+
+                let badgeClass = pct >= 75 ? 'status-eligible' : (pct >= 66 ? 'status-condonation' : 'status-detained');
+                let badgeText = pct >= 75 ? 'Eligible' : (pct >= 66 ? 'Condonation' : 'Detained');
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><b>${sub}</b></td>
+                        <td>${data.conducted}</td>
+                        <td>${data.present}</td>
+                        <td>${pct}%</td>
+                        <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                    </tr>`;
+            }
+
+            const totalPct = grandConducted > 0 ? Math.round((grandPresent / grandConducted) * 100) : 0;
+            const statusDiv = document.getElementById('eligibilityStatus');
+            document.getElementById('resStudentName').innerText = `${studentName} (${roll})`;
+            
+            statusDiv.className = "eligibility-banner";
+            if (totalPct >= 75) {
+                statusDiv.innerText = `AGGREGATE: ${totalPct}% - OVERALL ELIGIBLE`;
+                statusDiv.classList.add("status-eligible");
+            } else if (totalPct >= 66) {
+                statusDiv.innerText = `AGGREGATE: ${totalPct}% - OVERALL CONDONATION`;
+                statusDiv.classList.add("status-condonation");
+            } else {
+                statusDiv.innerText = `AGGREGATE: ${totalPct}% - OVERALL DETAINED`;
+                statusDiv.classList.add("status-detained");
+            }
+            document.getElementById('individualStatsResult').style.display = "block";
+        });
+
+        // 4. SAVE ATTENDANCE
+        document.getElementById('saveAttendanceBtn').addEventListener('click', async () => {
+            const sub = document.getElementById('subjectSelect').value;
+            const date = document.getElementById('attDate').value;
+            const rows = document.querySelectorAll('#studentList tr');
+            try {
+                for (let row of rows) {
+                    const roll = row.getAttribute('data-roll');
+                    const status = row.querySelector('input[type="radio"]:checked').value;
+                    await addDoc(collection(db, "attendance"), {
+                        studentRoll: roll, subject: sub, date: date, status: status, markedAt: new Date()
+                    });
+                }
+                alert("Attendance Saved!");
+                location.reload();
+            } catch (e) { alert("Error: " + e.message); }
+        });
+    </script>
+</body>
+</html>

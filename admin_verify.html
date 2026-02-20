@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Payments | Admin</title>
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --accent-gold: #ff9933;
+            --light-gray: #f4f4f4;
+            --gov-dark: #222;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--light-gray); display: none; }
+        .gov-strip { background: var(--gov-dark); color: white; font-size: 12px; padding: 10px 10%; display: flex; justify-content: space-between; }
+        header { background: var(--primary-blue); color: white; padding: 20px 10%; border-bottom: 4px solid var(--accent-gold); }
+        
+        .container { padding: 30px 10%; }
+        .payment-card { 
+            background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--accent-gold);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .details b { color: var(--primary-blue); }
+        .actions { display: flex; gap: 10px; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--danger); }
+        .btn-back { background: transparent; border: 1px solid white; color: white; text-decoration: none; padding: 5px 15px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">
+        <span>PAYMENT VERIFICATION MODULE</span>
+        <a href="admin.html" class="btn-back">← Back to CR/LR</a>
+    </div>
+
+    <header>
+        <h1>Pending Payment Requests</h1>
+    </header>
+
+    <div class="container" id="requestList">
+        <p id="loadingMsg">Fetching pending transactions...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const ADMINS = ["allubalaji12@gmail.com", "cr2007@aol.com", "lr2007@aol.com"];
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && ADMINS.includes(user.email)) {
+                document.body.style.display = "block";
+                loadPendingPayments();
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        function loadPendingPayments() {
+            const q = query(collection(db, "payments"), where("status", "==", "Pending Approval"));
+            
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('requestList');
+                list.innerHTML = snap.empty ? "<p>No pending payment requests found.</p>" : "";
+                
+                snap.forEach(docSnap => {
+                    const p = docSnap.data();
+                    const id = docSnap.id;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'payment-card';
+                    card.innerHTML = `
+                        <div class="details">
+                            <p><b>Student Roll:</b> ${p.studentRoll}</p>
+                            <p><b>Fee:</b> ${p.description}</p>
+                            <p><b>Amount:</b> ₹${p.amount}</p>
+                            <small>UPI ID Used: ${p.upiId}</small>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-approve" onclick="verifyPayment('${id}', 'Paid')">Approve</button>
+                            <button class="btn btn-reject" onclick="verifyPayment('${id}', 'Rejected')">Reject</button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            });
+        }
+
+        window.verifyPayment = async (id, status) => {
+            let updateData = { status: status, processedAt: new Date() };
+            
+            if (status === 'Rejected') {
+                const reason = prompt("Please enter the reason for rejection:");
+                if (!reason) return; // Cancel if no reason provided
+                updateData.rejectReason = reason;
+            }
+
+            try {
+                await updateDoc(doc(db, "payments", id), updateData);
+                alert(`Payment ${status} Successfully.`);
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        };
+    </script>
+</body>
+</html>

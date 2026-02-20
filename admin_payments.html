@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Payments | Admin Control</title>
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --accent-orange: #ff9933;
+            --light-gray: #f4f4f4;
+            --gov-dark: #222;
+        }
+
+        body { font-family: Arial, sans-serif; margin: 0; background: var(--light-gray); color: #333; display: none; }
+
+        .gov-strip { background: var(--gov-dark); color: white; font-size: 12px; padding: 10px 10%; display: flex; justify-content: space-between; }
+        header { background: var(--primary-blue); color: white; padding: 20px 10%; border-bottom: 4px solid var(--accent-orange); display: flex; justify-content: space-between; align-items: center; }
+
+        .container { padding: 40px 10%; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 30px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 4px solid var(--accent-orange); }
+        
+        h2 { color: var(--primary-blue); margin-top: 0; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; color: #555; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        .btn { 
+            background: var(--primary-blue); color: white; border: none; padding: 15px; 
+            cursor: pointer; font-weight: bold; width: 100%; border-radius: 4px; margin-top: 20px;
+        }
+        .btn:hover { background: #002244; }
+        .nav-btn { background: none; border: 1px solid white; color: white; padding: 8px 15px; text-decoration: none; font-size: 14px; border-radius: 4px; }
+        
+        .info-box { background: #e7f3ff; padding: 15px; border-radius: 4px; border-left: 4px solid var(--primary-blue); margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">
+        <span>FINANCIAL ADMINISTRATION PORTAL</span>
+        <a href="admin.html" style="color:white; text-decoration:none;">← Back to Dashboard</a>
+    </div>
+
+    <header>
+        <h1>Issue Fee Demands</h1>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <div class="info-box">
+                <strong>Admin Tip:</strong> To issue a fee to every student in the database at once, type <code>ALL</code> in the Roll Number field.
+            </div>
+
+            <form id="paymentForm">
+                <label>TARGET STUDENT ROLL NUMBER</label>
+                <input type="text" id="targetRoll" placeholder="e.g., 25CSE01 or ALL" required>
+
+                <label>FEE DESCRIPTION / TITLE</label>
+                <input type="text" id="feeTitle" placeholder="e.g., Semester 3 Exam Fee" required>
+
+                <label>AMOUNT (INR)</label>
+                <input type="number" id="feeAmount" placeholder="0.00" required>
+                
+                <label>ADMIN UPI ID (for receiving payments)</label>
+<input type="text" id="adminUpi" placeholder="e.g., yourname@okaxis" required>
+
+                <label>DUE DATE (OPTIONAL)</label>
+                <input type="date" id="dueDate">
+
+                <button type="submit" class="btn">Broadcast Payment Requirement</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const ADMIN_EMAIL = "cr2007@aol.com"; 
+
+        // Security Check
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email === ADMIN_EMAIL) {
+                document.body.style.display = "block";
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        // Handle Payment Creation
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const roll = document.getElementById('targetRoll').value.trim().toUpperCase();
+            const title = document.getElementById('feeTitle').value;
+            const amount = document.getElementById('feeAmount').value;
+            const due = document.getElementById('dueDate').value;
+
+            try {
+                // Add new payment record to the 'payments' collection
+                await addDoc(collection(db, "payments"), {
+                    studentRoll: roll,
+                    description: title,
+                    amount: amount,
+                    dueDate: due || "Not Specified",
+                    status: "Unpaid",
+                    issuedAt: new Date(),
+                    issuedBy: ADMIN_EMAIL
+                });
+
+                alert(`Success: Payment demand for "${title}" has been issued to ${roll}.`);
+                e.target.reset();
+            } catch (err) {
+                alert("Critical Error: " + err.message);
+            }
+        });
+        await addDoc(collection(db, "payments"), {
+    studentRoll: roll,
+    description: title,
+    amount: amount,
+    upiId: document.getElementById('adminUpi').value, // NEW FIELD
+    dueDate: due || "Not Specified",
+    status: "Unpaid",
+    issuedAt: new Date()
+});
+
+    </script>
+</body>
+</html>

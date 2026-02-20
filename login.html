@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login | CSE-3 Official</title>
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --secondary-blue: #0056b3;
+            --accent-orange: #ff9933;
+            --light-gray: #f4f4f4;
+            --text-dark: #333;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Reusing your Government Strip */
+        .gov-strip {
+            background: #222;
+            color: white;
+            font-size: 12px;
+            padding: 5px 10%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        header {
+            background: white;
+            padding: 15px 10%;
+            display: flex;
+            align-items: center;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        /* Login Container */
+        .login-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .login-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--accent-orange);
+        }
+
+        .login-card h2 {
+            color: var(--primary-blue);
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 0; /* Gov sites often use sharp corners */
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: 2px solid var(--secondary-blue);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.3s;
+        }
+
+        .btn-login:hover {
+            background: var(--secondary-blue);
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
+        footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gov-strip">
+        <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A)</span>
+        <span>Secure Access Portal</span>
+    </div>
+
+    <header>
+        <div class="logo"></div>
+        <div class="header-text">
+            <h1>CSE - 5</h1>
+            <small>CSE-5 student login</small>
+        </div>
+    </header>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <h2>Authorized Sign-In</h2>
+            <div id="errorBox" class="error-msg"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Institutional Email</label>
+                    <input type="email" id="email" placeholder="example@cse.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login" id="submitBtn">Login to Portal</button>
+            </form>
+            
+            <p style="text-align:center; font-size: 12px; margin-top: 20px; color: #666;">
+                Unauthorized access is strictly prohibited. <br>
+                <a href="index.html" style="color: var(--secondary-blue);">Back to Home</a>
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 CSE-3 Official.All Rights Reserved.
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+            authDomain: "cse-5-cse.firebaseapp.com",
+            projectId: "cse-5-cse",
+            storageBucket: "cse-5-cse.firebasestorage.app",
+            messagingSenderId: "385090633983",
+            appId: "1:385090633983:web:24dc98e6c58279dd520cca",
+            measurementId: "G-7TBJ6L6FY0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loginForm = document.getElementById('loginForm');
+        const errorBox = document.getElementById('errorBox');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Successful login
+                    window.location.href = "dashboard.html"; 
+                })
+                .catch((error) => {
+                    errorBox.style.display = 'block';
+                    errorBox.innerText = "Authentication Failed: " + error.message;
+                });
+        });
+    </script>
+</body>
+</html>
