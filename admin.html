@@ -208,8 +208,41 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        const ADMIN_EMAIL = "cr2007@aol.com"; 
+        // --- AUTHORIZED LIST ---
+        const AUTHORIZED_ADMINS = [
+            "allubalaji12@gmail.com", 
+            "cr2007@aol.com",
+            "lr2007@aol.com"
+        ];
 
+        const form = document.getElementById('adminLoginForm');
+        const errorBox = document.getElementById('errorBox');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            errorBox.style.display = "none";
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Step 1: Check if email is in the admin list BEFORE hitting Firebase
+            if (!AUTHORIZED_ADMINS.includes(email)) {
+                errorBox.innerText = "No Access: You are not CR/LR";
+                errorBox.style.display = "block";
+                return;
+            }
+
+            // Step 2: Proceed with Authentication
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    // Success: Redirect to the main admin control page
+                    window.location.href = "admin.html";
+                })
+                .catch((error) => {
+                    errorBox.innerText = "Invalid credentials. Incident has been logged.";
+                    errorBox.style.display = "block";
+                });
+        });
         // --- FIXED SESSION TIMER LOGIC ---
         let timeRemaining = 300; // 5 minutes in seconds
         
@@ -302,4 +335,5 @@
         });
     </script>
 </body>
+
 </html>
