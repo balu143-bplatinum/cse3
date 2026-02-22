@@ -210,35 +210,7 @@
             } else { window.location.href = "login.html"; }
         });
 
-// Inside your existing onAuthStateChanged block in dashboard.html
-import { doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        const sessionRef = doc(db, "active_sessions", user.uid);
-
-        // 1. Create the session on login
-        await setDoc(sessionRef, {
-            email: user.email,
-            lastActive: new Date(),
-            status: "online"
-        }, { merge: true });
-
-        // 2. Listen for Admin Termination
-        onSnapshot(sessionRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                alert("Your session has been terminated by an administrator.");
-                signOut(auth).then(() => window.location.href = "login.html");
-            }
-        });
-
-        // 3. Clean up session on manual logout
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await deleteDoc(sessionRef);
-            signOut(auth).then(() => window.location.href = "login.html");
-        });
-    }
-});
 
         // RESTORED PROGRESS BAR LOGIC
         async function loadAttendance(roll) {
