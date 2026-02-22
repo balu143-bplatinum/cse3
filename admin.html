@@ -139,13 +139,13 @@
 <body onmousemove="resetTimer()" onclick="resetTimer()" onkeypress="resetTimer()">
 
     <div class="gov-strip">
-        <span>CR/LR CONTROL</span>
+        <span></span>
         <span id="sessionTimer">Session Expires: 05:00</span>
     </div>
 
     <header>
         <div>
-            <h1 style="margin:0;">CONTROL OF CSE 5</h1>
+            <h1 style="margin:0;">CR/LR CONTROL OF CSE 5</h1>
             <small>AU College of Engineering (A) | CSE-5</small>
         </div>
         <nav>
@@ -164,7 +164,7 @@
                 <input type="text" id="regName" placeholder="e.g. BALU A" required>
                 
                 <label>REGISTRATION / ROLL NUMBER</label>
-                <input type="text" id="regRoll" placeholder="e.g. 25CSE01" required>
+                <input type="text" id="regRoll" placeholder="3255064022XX" required>
                 
                 <label>OFFICIAL EMAIL ADDRESS</label>
                 <input type="email" id="regEmail" placeholder="student@university.edu" required>
@@ -172,7 +172,7 @@
                 <label>CONTACT NUMBER</label>
                 <input type="text" id="regPhone" placeholder="+91 XXXXXXXXXX">
                 
-                <button type="submit" class="btn">Authorize Student Record</button>
+                <button type="submit" class="btn">Submit Student Record</button>
             </form>
         </div>
 
@@ -317,4 +317,5 @@ onAuthStateChanged(auth, (user) => {
         });
     </script>
 </body>
+
 </html>
