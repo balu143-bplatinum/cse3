@@ -233,11 +233,12 @@
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const today = days[new Date().getDay()];
             const sched = {
-                'Monday': [{t:'09:00', s:'Data Structures', v:'NCRC'}, {t:'11:00', s:'Discrete Maths', v:'LH-2'}],
-                'Tuesday': [{t:'09:00', s:'DBMS', v:'Lab-1'}, {t:'02:00', s:'Operating Systems', v:'LH-1'}],
-                'Wednesday': [{t:'10:00', s:'TOC', v:'LH-2'}],
-                'Thursday': [{t:'09:00', s:'Networks', v:'LH-1'}, {t:'11:00', s:'Software Eng.', v:'LH-3'}],
-                'Friday': [{t:'09:00', s:'AI & ML', v:'LH-2'}]
+                'Monday': [{t:'09:00', s:'b-2 Physics lab', v:'Chemical'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
+                'Tuesday': [{t:'09:00', s:'M2', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
+                'Wednesday': [{t:'09:50', s:'B-1 DS LAB / B-2 LA LAB', v:'RESPECTIVE LABS'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
+                'Thursday': [{t:'09:00', s:'DLD', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
+                'Friday': [{t:'09:00', s:'M2', v:'NCRC GF-6'},{t:'10:40', s:'DLD', v:''}, {t:'01:30', s:'B-1 PHYSICS LAB', v:'CHEMICAL'},],
+                 'Saturday': [{t:'01:30', s:'B-2 DS LAB / B-1 LA LAB', v:'RESPECTIVE LABS'}]
             };
             const list = sched[today] || [{t:'-', s:'No Session', v:'-'}];
             document.getElementById('timetableBody').innerHTML = list.map(c => `<tr><td>${c.t}</td><td><b>${c.s}</b></td><td>${c.v}</td></tr>`).join('');
@@ -350,5 +351,6 @@ document.body.addEventListener('keypress', resetTimer);
 document.body.addEventListener('click', resetTimer);
     </script>
 </body>
+
 
 </html>
