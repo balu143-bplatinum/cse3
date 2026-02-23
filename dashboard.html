@@ -167,189 +167,194 @@
         <p style="opacity: 0.7; font-size: 11px;"> Batch (2025-2029) | Designed for students</p>
     </footer>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { 
+        getAuth, 
+        onAuthStateChanged, 
+        signOut, 
+        setPersistence, 
+        browserSessionPersistence 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { 
+        getFirestore, doc, updateDoc, collection, query, where, getDocs, onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
-            authDomain: "cse-5-cse.firebaseapp.com",
-            projectId: "cse-5-cse",
-            storageBucket: "cse-5-cse.firebasestorage.app",
-            messagingSenderId: "385090633983",
-            appId: "1:385090633983:web:24dc98e6c58279dd520cca"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+        authDomain: "cse-5-cse.firebaseapp.com",
+        projectId: "cse-5-cse",
+        storageBucket: "cse-5-cse.firebasestorage.app",
+        messagingSenderId: "385090633983",
+        appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        let currentRoll = "";
+    let currentRoll = "";
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                fetchGlobalNotice();
-                const q = query(collection(db, "students"), where("email", "==", user.email));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const data = snap.docs[0].data();
-                    currentRoll = data.rollNo;
-                    
-                    document.getElementById('sideName').innerText = data.name;
-                    document.getElementById('sideRoll').innerText = "Roll: " + currentRoll;
-                    document.getElementById('sideEmail').innerText = user.email;
-                    document.getElementById('sidePhone').innerText = data.phone || "Not Set";
-                    document.getElementById('initials').innerText = data.name.charAt(0).toUpperCase();
+    // --- 1. SET PERSISTENCE TO SESSION ONLY ---
+    // This makes Firebase logout automatically when the browser/tab is closed
+    setPersistence(auth, browserSessionPersistence)
+        .then(() => {
+            // After setting persistence, monitor the auth state
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    fetchGlobalNotice();
+                    const q = query(collection(db, "students"), where("email", "==", user.email));
+                    const snap = await getDocs(q);
+                    if (!snap.empty) {
+                        const data = snap.docs[0].data();
+                        currentRoll = data.rollNo;
+                        
+                        document.getElementById('sideName').innerText = data.name;
+                        document.getElementById('sideRoll').innerText = "Roll: " + currentRoll;
+                        document.getElementById('sideEmail').innerText = user.email;
+                        document.getElementById('sidePhone').innerText = data.phone || "Not Set";
+                        document.getElementById('initials').innerText = data.name.charAt(0).toUpperCase();
 
-                    loadAttendance(currentRoll);
-                    loadPayments(currentRoll);
-                    loadTimetable();
-                    document.getElementById('loader').style.display = 'none';
+                        loadAttendance(currentRoll);
+                        loadPayments(currentRoll);
+                        loadTimetable();
+                        document.getElementById('loader').style.display = 'none';
+                    }
+                } else { 
+                    window.location.href = "login.html"; 
                 }
-            } else { window.location.href = "login.html"; }
-        });
-
-
-
-        // RESTORED PROGRESS BAR LOGIC
-        async function loadAttendance(roll) {
-            const q = query(collection(db, "attendance"), where("studentRoll", "==", roll));
-            const snap = await getDocs(q);
-            let p = 0, t = 0;
-            snap.forEach(d => { t++; if(d.data().status === "Present") p++; });
-            
-            if(t > 0) {
-                const pct = Math.round((p/t)*100);
-                document.getElementById('attPercent').innerText = pct + "%";
-                document.getElementById('attCount').innerText = `Present: ${p}/${t}`;
-                const bar = document.getElementById('attBar');
-                bar.style.width = pct + "%";
-                bar.style.backgroundColor = pct < 75 ? "#cc0000" : "#28a745";
-            }
-        }
-
-        function loadTimetable() {
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const today = days[new Date().getDay()];
-            const sched = {
-                'Monday': [{t:'09:00', s:'b-2 Physics lab', v:'Chemical'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
-                'Tuesday': [{t:'09:00', s:'M2', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
-                'Wednesday': [{t:'09:50', s:'B-1 DS LAB / B-2 LA LAB', v:'RESPECTIVE LABS'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
-                'Thursday': [{t:'09:00', s:'DLD', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
-                'Friday': [{t:'09:00', s:'M2', v:'NCRC GF-6'},{t:'10:40', s:'DLD', v:''}, {t:'01:30', s:'B-1 PHYSICS LAB', v:'CHEMICAL'},],
-                 'Saturday': [{t:'01:30', s:'B-2 DS LAB / B-1 LA LAB', v:'RESPECTIVE LABS'}]
-            };
-            const list = sched[today] || [{t:'-', s:'No Session', v:'-'}];
-            document.getElementById('timetableBody').innerHTML = list.map(c => `<tr><td>${c.t}</td><td><b>${c.s}</b></td><td>${c.v}</td></tr>`).join('');
-        }
-
-        async function fetchGlobalNotice() {
-            onSnapshot(doc(db, "admin_settings", "notifications"), (docSnap) => {
-                const banner = document.getElementById('notificationBanner');
-                if (docSnap.exists() && docSnap.data().message) {
-                    document.getElementById('notifText').innerText = docSnap.data().message;
-                    banner.style.display = 'block';
-                } else { banner.style.display = 'none'; }
             });
-        }
+        })
+        .catch((error) => console.error("Persistence Error:", error));
 
-       function loadPayments(roll) {
-    const q = query(collection(db, "payments"), where("studentRoll", "in", [roll, "ALL"]));
-    onSnapshot(q, (snap) => {
-        const area = document.getElementById('paymentDisplayArea');
-        area.innerHTML = "";
-        snap.forEach(docSnap => {
-            const p = docSnap.data();
-            const pId = docSnap.id;
-            
-            let actionHtml = '';
-            if (p.status === "Unpaid") {
-                // Creates a standard UPI Deep Link
-                const upiLink = `upi://pay?pa=${p.upiId}&pn=Admin&am=${p.amount}&cu=INR`;
-                actionHtml = `<button class="btn" onclick="initiatePayment('${pId}', '${upiLink}')">Pay via UPI</button>`;
-            } else if (p.status === "Pending Approval") {
-                actionHtml = `<p style="color:orange;">⏳ Payment submitted. Awaiting Admin verification.</p>`;
-            } else if (p.status === "Rejected") {
-                actionHtml = `<p style="color:red;">❌ Rejected: ${p.rejectReason || 'Invalid transaction'}</p>
-                              <button class="btn btn-outline" onclick="initiatePayment('${pId}')">Try Again</button>`;
-            } else if (p.status === "Paid") {
-                actionHtml = `<button class="btn" style="background:green;" onclick="downloadReceipt('${pId}')">Download Bill</button>`;
-            }
-
-            area.innerHTML += `
-                <div class="card" style="border-left: 5px solid var(--accent-gold);">
-                    <h4>${p.description}</h4>
-                    <p>Amount: ₹${p.amount} | Status: <b>${p.status}</b></p>
-                    ${actionHtml}
-                </div>`;
-        });
+    // --- 2. EXPLICIT LOGOUT ON TAB CLOSE ---
+    window.addEventListener('beforeunload', () => {
+        // This triggers a sign-out as the tab is destroyed
+        signOut(auth);
     });
-}
-window.initiatePayment = async (docId, upiLink) => {
-    window.location.href = upiLink; // Redirects to PhonePe/GPay
-    // Update status to pending so admin sees it
-    await updateDoc(doc(db, "payments", docId), { status: "Pending Approval" });
-    alert("Please complete the payment in your UPI app and wait for Admin approval.");
-};
 
-        window.openEditModal = () => {
-            document.getElementById('editRoll').value = currentRoll;
-            document.getElementById('editName').value = document.getElementById('sideName').innerText;
-            document.getElementById('editPhone').value = document.getElementById('sidePhone').innerText;
-            document.getElementById('editModal').style.display = 'flex';
+    // --- 3. ATTENDANCE & TIMETABLE LOGIC ---
+    async function loadAttendance(roll) {
+        const q = query(collection(db, "attendance"), where("studentRoll", "==", roll));
+        const snap = await getDocs(q);
+        let p = 0, t = 0;
+        snap.forEach(d => { t++; if(d.data().status === "Present") p++; });
+        
+        if(t > 0) {
+            const pct = Math.round((p/t)*100);
+            document.getElementById('attPercent').innerText = pct + "%";
+            document.getElementById('attCount').innerText = `Present: ${p}/${t}`;
+            const bar = document.getElementById('attBar');
+            bar.style.width = pct + "%";
+            bar.style.backgroundColor = pct < 75 ? "#cc0000" : "#28a745";
+        }
+    }
+
+    function loadTimetable() {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const today = days[new Date().getDay()];
+        const sched = {
+            'Monday': [{t:'09:00', s:'b-2 Physics lab', v:'Chemical'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
+            'Tuesday': [{t:'09:00', s:'M2', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'EEE', v:'NCRC GF-6'}],
+            'Wednesday': [{t:'09:50', s:'B-1 DS LAB / B-2 LA LAB', v:'RESPECTIVE LABS'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
+            'Thursday': [{t:'09:00', s:'DLD', v:'NCRC GF-6'}, {t:'10:40', s:'PHY', v:'NCRC GF-6'}, {t:'01:30', s:'DS', v:'NCRC GF-6'}],
+            'Friday': [{t:'09:00', s:'M2', v:'NCRC GF-6'},{t:'10:40', s:'DLD', v:''}, {t:'01:30', s:'B-1 PHYSICS LAB', v:'CHEMICAL'},],
+            'Saturday': [{t:'01:30', s:'B-2 DS LAB / B-1 LA LAB', v:'RESPECTIVE LABS'}]
         };
-        window.closeEditModal = () => document.getElementById('editModal').style.display = 'none';
-
-        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-            try {
-                await updateDoc(doc(db, "students", currentRoll), {
-                    name: document.getElementById('editName').value,
-                    phone: document.getElementById('editPhone').value
-                });
-                alert("Profile Updated Successfully!");
-                location.reload();
-            } catch (e) { alert("Error: " + e.message); }
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = "login.html"));
-    // --- FIXED SESSION TIMER LOGIC ---
-let timeRemaining = 300; // 5 Minutes in seconds
-const timerDisplay = document.getElementById('sessionTimer');
-
-function updateTimerUI() {
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-    
-    // Update the text in the gov-strip
-    if (timerDisplay) {
-        timerDisplay.innerText = `Session Expires: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const list = sched[today] || [{t:'-', s:'No Session', v:'-'}];
+        document.getElementById('timetableBody').innerHTML = list.map(c => `<tr><td>${c.t}</td><td><b>${c.s}</b></td><td>${c.v}</td></tr>`).join('');
     }
 
-    // When time runs out
-    if (timeRemaining <= 0) {
-        clearInterval(sessionInterval);
-        alert("Your session has expired for security reasons. Please login again.");
-        signOut(auth).then(() => {
-            window.location.href = "login.html";
+    async function fetchGlobalNotice() {
+        onSnapshot(doc(db, "admin_settings", "notifications"), (docSnap) => {
+            const banner = document.getElementById('notificationBanner');
+            if (docSnap.exists() && docSnap.data().message) {
+                document.getElementById('notifText').innerText = docSnap.data().message;
+                banner.style.display = 'block';
+            } else { banner.style.display = 'none'; }
         });
     }
-    timeRemaining--;
-}
 
-// Function to reset timer when user moves mouse or clicks
-window.resetTimer = () => {
-    timeRemaining = 300; 
-};
+    function loadPayments(roll) {
+        const q = query(collection(db, "payments"), where("studentRoll", "in", [roll, "ALL"]));
+        onSnapshot(q, (snap) => {
+            const area = document.getElementById('paymentDisplayArea');
+            area.innerHTML = "";
+            snap.forEach(docSnap => {
+                const p = docSnap.data();
+                const pId = docSnap.id;
+                let actionHtml = '';
+                if (p.status === "Unpaid") {
+                    const upiLink = `upi://pay?pa=${p.upiId}&pn=Admin&am=${p.amount}&cu=INR`;
+                    actionHtml = `<button class="btn" onclick="initiatePayment('${pId}', '${upiLink}')">Pay via UPI</button>`;
+                } else if (p.status === "Pending Approval") {
+                    actionHtml = `<p style="color:orange;">⏳ Awaiting Admin verification.</p>`;
+                } else if (p.status === "Paid") {
+                    actionHtml = `<button class="btn" style="background:green;">Download Receipt</button>`;
+                }
 
-// Start the countdown
-const sessionInterval = setInterval(updateTimerUI, 1000);
+                area.innerHTML += `
+                    <div class="card" style="border-left: 5px solid var(--accent-gold);">
+                        <h4>${p.description}</h4>
+                        <p>Amount: ₹${p.amount} | Status: <b>${p.status}</b></p>
+                        ${actionHtml}
+                    </div>`;
+            });
+        });
+    }
 
-// Add event listeners to the body to detect activity
-document.body.addEventListener('mousemove', resetTimer);
-document.body.addEventListener('keypress', resetTimer);
-document.body.addEventListener('click', resetTimer);
-    </script>
+    // --- 4. WINDOW FUNCTIONS ---
+    window.initiatePayment = async (docId, upiLink) => {
+        window.location.href = upiLink;
+        await updateDoc(doc(db, "payments", docId), { status: "Pending Approval" });
+        alert("Redirecting to UPI... Please wait for approval after paying.");
+    };
+
+    window.openEditModal = () => {
+        document.getElementById('editRoll').value = currentRoll;
+        document.getElementById('editName').value = document.getElementById('sideName').innerText;
+        document.getElementById('editPhone').value = document.getElementById('sidePhone').innerText;
+        document.getElementById('editModal').style.display = 'flex';
+    };
+    window.closeEditModal = () => document.getElementById('editModal').style.display = 'none';
+
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+        try {
+            await updateDoc(doc(db, "students", currentRoll), {
+                name: document.getElementById('editName').value,
+                phone: document.getElementById('editPhone').value
+            });
+            alert("Profile Updated!");
+            location.reload();
+        } catch (e) { alert("Error: " + e.message); }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = "login.html"));
+
+    // --- 5. SESSION TIMER (INACTIVITY) ---
+    let timeRemaining = 300; 
+    const timerDisplay = document.getElementById('sessionTimer');
+
+    function updateTimerUI() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        if (timerDisplay) {
+            timerDisplay.innerText = `Session Expires: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        if (timeRemaining <= 0) {
+            clearInterval(sessionInterval);
+            signOut(auth).then(() => window.location.href = "login.html");
+        }
+        timeRemaining--;
+    }
+
+    window.resetTimer = () => { timeRemaining = 120; };
+    const sessionInterval = setInterval(updateTimerUI, 1000);
+
+    document.body.addEventListener('mousemove', resetTimer);
+    document.body.addEventListener('keypress', resetTimer);
+    document.body.addEventListener('click', resetTimer);
+</script>
 </body>
 
 
