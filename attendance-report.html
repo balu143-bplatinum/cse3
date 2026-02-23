@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Report | CSE-3 Official</title>
+    <title>Attendance Report | CSE-5 Official</title>
     <style>
         :root {
             --primary-blue: #003366;
@@ -39,7 +39,7 @@
     <header>
         <div><strong>ANDHRA UNIVERSITY</strong> | Report Portal</div>
         <div class="gov-strip">
-    <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A) | CSE 3</span>
+    <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A) | Government of AP</span>
     <span id="sessionTimer">Session Expires in: 05:00</span>
 </div>
         <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
@@ -80,11 +80,16 @@
 
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { 
+        getAuth, 
+        onAuthStateChanged, 
+        signOut, 
+        setPersistence, 
+        browserSessionPersistence 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { 
         getFirestore, 
         doc, 
-        getDoc, 
         collection, 
         query, 
         where, 
@@ -105,35 +110,39 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            try {
-                // Using user.uid to get the student profile saved in admin.html
-                const studentDoc = await getDoc(doc(db, "students", user.uid));
-                
-                if (studentDoc.exists()) {
-                    const roll = studentDoc.data().rollNo;
-                    loadDetailedReport(roll);
-                } else {
-                    // Fallback: If UID isn't the key, we search for a doc where email matches
-                    const q = query(collection(db, "students"), where("email", "==", user.email));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const roll = querySnapshot.docs[0].data().rollNo;
-                        loadDetailedReport(roll);
-                    } else {
-                        document.getElementById('loader').innerText = "Student profile not found. Please contact Admin.";
+    // --- 1. SESSION PERSISTENCE & AUTH ---
+    // Forces logout when browser/tab is closed
+    setPersistence(auth, browserSessionPersistence)
+        .then(() => {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    try {
+                        // FIXED: Match logic in dashboard.html by querying email
+                        const q = query(collection(db, "students"), where("email", "==", user.email));
+                        const querySnapshot = await getDocs(q);
+                        
+                        if (!querySnapshot.empty) {
+                            const studentData = querySnapshot.docs[0].data();
+                            loadDetailedReport(studentData.rollNo);
+                        } else {
+                            document.getElementById('loader').innerText = "Student record not found.";
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        document.getElementById('loader').innerText = "Error: " + err.message;
                     }
+                } else {
+                    window.location.href = "login.html";
                 }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('loader').innerText = "Auth Error: " + err.message;
-            }
-        } else {
-            window.location.href = "login.html";
-        }
+            });
+        });
+
+    // --- 2. LOGOUT ON TAB CLOSE ---
+    window.addEventListener('beforeunload', () => {
+        signOut(auth);
     });
 
+    // --- 3. ATTENDANCE REPORT LOGIC ---
     async function loadDetailedReport(roll) {
         const container = document.getElementById('reportContainer');
         const table = document.getElementById('reportTable');
@@ -178,52 +187,37 @@
 
         } catch (err) {
             console.error(err);
-            loader.innerText = "Query Error. If you see an Index link in console, click it.";
+            loader.innerText = "Query Error. Check Firestore Indexes.";
         }
     }
-    // --- SESSION SYNCHRONIZATION LOGIC ---
-const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 Minutes in milliseconds
 
-function syncSession() {
-    const now = Date.now();
-    
-    // Check if session has already expired in another tab
-    const lastActive = localStorage.getItem('lastActivity');
-    
-    if (lastActive && (now - lastActive > SESSION_TIMEOUT)) {
-        forceLogout("Session expired due to inactivity.");
+    // --- 4. SESSION TIMER SYNC ---
+    const SESSION_TIMEOUT = 5 * 60 * 1000; 
+
+    function syncSession() {
+        const now = Date.now();
+        const lastActive = localStorage.getItem('lastActivity');
+        
+        if (lastActive && (now - lastActive > SESSION_TIMEOUT)) {
+            signOut(auth).then(() => window.location.href = "login.html");
+        }
+
+        const timerDisplay = document.getElementById('sessionTimer');
+        if (timerDisplay && lastActive) {
+            const remaining = Math.max(0, Math.floor((SESSION_TIMEOUT - (now - lastActive)) / 1000));
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            timerDisplay.innerText = `Session Expires in: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
     }
 
-    // Update the UI timer if it exists (for the gov-strip)
-    const timerDisplay = document.getElementById('sessionTimer');
-    if (timerDisplay) {
-        const remaining = Math.max(0, Math.floor((SESSION_TIMEOUT - (now - lastActive)) / 1000));
-        const mins = Math.floor(remaining / 60);
-        const secs = remaining % 60;
-        timerDisplay.innerText = `Session Expires in: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-}
+    function resetActivity() { localStorage.setItem('lastActivity', Date.now()); }
 
-function forceLogout(msg) {
-    localStorage.removeItem('lastActivity'); // Clear session
-    alert(msg);
-    signOut(auth).then(() => window.location.href = "login.html");
-}
-
-function resetActivity() {
-    localStorage.setItem('lastActivity', Date.now());
-}
-
-// Start Monitoring
-resetActivity(); // Set initial time on page load
-setInterval(syncSession, 1000); // Check every second
-
-// Listen for user interaction on THIS page to reset the global timer
-['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
-    document.addEventListener(evt, resetActivity);
-});
-
+    resetActivity();
+    setInterval(syncSession, 1000);
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetActivity);
+    });
 </script>
 </body>
-
 </html>
