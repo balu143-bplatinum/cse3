@@ -98,7 +98,7 @@
 
     <div class="gov-strip">
         <span>ANDHRA UNIVERSITY COLLEGE OF ENGINEERING (A)</span>
-        <span id="sessionTimer">Session Expires in: 01:00</span>
+        <span id="sessionTimer">Session Expires in: 05:00</span>
         <body onmousemove="resetTimer()" onclick="resetTimer()"></body>
     </div>
 
@@ -109,7 +109,10 @@
         </div>
         <button id="logoutBtn" style="background:transparent; border:1px solid white; color:white; padding:8px 15px; cursor:pointer; border-radius:4px;">Secure Logout</button>
     </header>
-
+<div class="nav-item" onclick="window.location.href='chat.html'" style="cursor:pointer; padding: 10px; display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 20px;">💬</span>
+    <span>Classmate Chat</span>
+</div>
     <div class="container">
         <aside class="sidebar">
             <div class="profile-img" id="initials">?</div>
@@ -195,7 +198,7 @@
 
     let currentRoll = "";
     // Set timeout to 1 minute (60,000 milliseconds)
-    const TIMEOUT = 30000; 
+    const TIMEOUT = 180000; 
 
     // --- 1. SESSION MANAGEMENT & AUTH ---
     setPersistence(auth, browserSessionPersistence).then(() => {
@@ -344,7 +347,6 @@
     });
 </script>
 </body>
-
 
 
 </html>
