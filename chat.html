@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CSE-3 chat</title>
+    <title>CSE-3 Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -19,11 +19,11 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; height: 100svh; overflow: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100svh; overflow: hidden; }
 
         .app-container { display: flex; height: 100%; width: 100%; position: relative; }
 
-        /* Sidebar - Desktop & Mobile */
+        /* Sidebar UI */
         .sidebar { 
             width: 320px; background: var(--sidebar-dark); display: flex; flex-direction: column; 
             border-right: 1px solid rgba(255,255,255,0.05); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,46 +45,36 @@
         .user-item:hover { background: rgba(255,255,255,0.03); }
         .user-item.active { background: rgba(56, 189, 248, 0.1); }
 
-        .avatar-box { position: relative; }
-        .avatar { width: 48px; height: 48px; border-radius: 16px; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 18px; }
+        .avatar { width: 48px; height: 48px; border-radius: 16px; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; position: relative; }
         .status-dot { position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: #475569; border: 3px solid var(--sidebar-dark); border-radius: 50%; }
         .online .status-dot { background: var(--online-green); box-shadow: 0 0 10px var(--online-green); }
 
         .unread-badge { background: var(--delete-red); color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 8px; margin-left: auto; display: none; }
         .has-unread .unread-badge { display: block; }
 
-        /* Main Chat Area */
+        /* Chat Area */
         .chat-area { flex: 1; display: flex; flex-direction: column; width: 100%; position: relative; }
         .chat-header { padding: 12px 20px; background: rgba(22, 27, 38, 0.8); backdrop-filter: blur(10px); display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 10; }
         
-        .header-info { margin-left: 12px; }
-        .header-name { font-weight: 700; font-size: 16px; }
-        .header-status { font-size: 11px; color: var(--accent-blue); font-weight: 500; }
-
-        #message-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+        #message-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         
-        /* Message Bubbles */
-        .msg { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 14.5px; position: relative; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .msg { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 14.5px; position: relative; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.1); word-wrap: break-word; }
         .sent { align-self: flex-end; background: var(--sent-msg); border-bottom-right-radius: 4px; color: white; }
         .received { align-self: flex-start; background: var(--sidebar-dark); border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
         
         .msg-time { font-size: 10px; margin-top: 4px; opacity: 0.7; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
         .tick-blue { color: var(--accent-blue); }
 
-        /* Controls */
         .input-wrapper { padding: 15px 20px; background: var(--bg-dark); padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         .input-bar { background: var(--sidebar-dark); padding: 6px 10px 6px 20px; border-radius: 30px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
         input[type="text"] { flex: 1; background: transparent; border: none; color: white; font-size: 16px; padding: 10px 0; outline: none; }
-        .send-btn { background: var(--accent-gradient); border: none; width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        
-        /* Context Menu */
+        .send-btn { background: var(--accent-gradient); border: none; width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
         #ctx-menu { display: none; position: fixed; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 2000; overflow: hidden; min-width: 150px; }
         .ctx-item { padding: 12px 16px; font-size: 14px; cursor: pointer; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .ctx-item:hover { background: rgba(255,255,255,0.05); }
 
         .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; }
         .overlay.active { display: block; }
-        
         .menu-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 10px; }
         @media (max-width: 768px) { .menu-btn { display: block; } }
     </style>
@@ -106,8 +96,8 @@
                 <button class="menu-btn" onclick="toggleSidebar()">☰</button>
                 <div id="activeAvatar" class="avatar" style="width: 40px; height: 40px; border-radius: 12px; display: none;"></div>
                 <div class="header-info">
-                    <div class="header-name" id="chatName">Select your Classmate</div>
-                    <div class="header-status" id="headerStatus"></div>
+                    <div class="header-name" id="chatName">Select Classmate</div>
+                    <div id="headerStatus" style="font-size: 11px; color: var(--accent-blue);"></div>
                 </div>
             </header>
 
@@ -133,7 +123,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, set, push, onValue, update, remove, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, update, remove, off, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
@@ -183,7 +173,7 @@
         const diff = (Date.now() - ts) / 1000;
         if (diff < 60) return "Active now";
         if (diff < 3600) return `Active ${Math.floor(diff/60)}m ago`;
-        return `Active ${new Date(ts).getHours()}:${new Date(ts).getMinutes()}`;
+        return `Active ${new Date(ts).getHours()}:${new Date(ts).getMinutes().toString().padStart(2, '0')}`;
     }
 
     async function loadClassmates() {
@@ -197,39 +187,58 @@
             div.className = 'user-item';
             div.id = `user-${data.rollNo}`;
             div.innerHTML = `
-                <div class="avatar-box"><div class="avatar">${data.name[0]}</div><div class="status-dot"></div></div>
-                <div style="flex:1"><div style="font-weight:700">${data.name}</div><div id="sub-${data.rollNo}" style="font-size:11px; opacity:0.6">Offline</div></div>
+                <div class="avatar">${data.name[0]}<div class="status-dot"></div></div>
+                <div style="flex:1">
+                    <div style="font-weight:700">${data.name}</div>
+                    <div id="sub-${data.rollNo}" style="font-size:11px; opacity:0.6">Offline</div>
+                </div>
                 <div class="unread-badge" id="badge-${data.rollNo}">0</div>`;
-            div.onclick = () => { openChat(data.rollNo, data.name); if(window.innerWidth < 768) toggleSidebar(); };
+            
+            div.onclick = () => {
+                document.querySelectorAll('.user-item').forEach(i => i.classList.remove('active'));
+                div.classList.add('active');
+                openChat(data.rollNo, data.name); 
+                if(window.innerWidth < 768) toggleSidebar(); 
+            };
             list.appendChild(div);
             
             onValue(ref(rtdb, `status/${data.rollNo}`), (s) => {
                 const status = s.val();
                 div.classList.toggle('online', status?.state === 'online');
-                document.getElementById(`sub-${data.rollNo}`).innerText = status?.state === 'online' ? 'Online' : timeAgo(status?.lastSeen);
-                if (targetRoll === data.rollNo) document.getElementById('headerStatus').innerText = status?.state === 'online' ? 'Online' : timeAgo(status?.lastSeen);
+                const lastSeenText = status?.state === 'online' ? 'Online' : timeAgo(status?.lastSeen);
+                document.getElementById(`sub-${data.rollNo}`).innerText = lastSeenText;
+                if (targetRoll === data.rollNo) document.getElementById('headerStatus').innerText = lastSeenText;
             });
         });
     }
 
     function openChat(tRoll, tName) {
+        // KILL PREVIOUS LISTENER BEFORE STARTING NEW ONE
+        if (activeChatId) {
+            off(ref(rtdb, `chats/${activeChatId}`));
+        }
+
         targetRoll = tRoll;
         const ids = [myRoll, targetRoll].sort();
         activeChatId = `${ids[0]}_${ids[1]}`;
+        
         document.getElementById('chatName').innerText = tName;
         document.getElementById('chatForm').style.display = 'block';
         document.getElementById('activeAvatar').innerText = tName[0];
         document.getElementById('activeAvatar').style.display = 'flex';
+        const container = document.getElementById('message-container');
+        container.innerHTML = ""; // Clear immediately
 
         onValue(ref(rtdb, `chats/${activeChatId}`), (snap) => {
-            const container = document.getElementById('message-container');
-            container.innerHTML = "";
+            container.innerHTML = ""; // Fresh render on every update
             const messages = snap.val() || {};
             Object.keys(messages).forEach(key => {
                 const m = messages[key];
                 if (m.senderId !== myRoll && !m.seen) update(ref(rtdb, `chats/${activeChatId}/${key}`), { seen: true });
+                
                 const div = document.createElement('div');
                 div.className = `msg ${m.senderId === myRoll ? 'sent' : 'received'}`;
+                
                 div.oncontextmenu = (e) => {
                     e.preventDefault();
                     if(m.senderId === myRoll) {
@@ -240,6 +249,7 @@
                         menu.style.top = `${e.pageY}px`;
                     }
                 };
+
                 const time = new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                 const ticks = m.senderId === myRoll ? `<span class="${m.seen ? 'tick-blue' : ''}">${m.seen ? '✔✔' : '✔'}</span>` : '';
                 div.innerHTML = `${m.text} ${m.edited ? '<small style="opacity:0.5; font-style:italic"> (edited)</small>' : ''} <div class="msg-time">${time} ${ticks}</div>`;
@@ -255,17 +265,24 @@
         e.preventDefault();
         const input = document.getElementById('msgInput');
         if (!input.value.trim()) return;
+
         if (selectedKey && document.getElementById('sendBtn').innerText === "✎") {
             update(ref(rtdb, `chats/${activeChatId}/${selectedKey}`), { text: input.value, edited: true });
             document.getElementById('sendBtn').innerText = "➔";
             selectedKey = null;
         } else {
-            push(ref(rtdb, `chats/${activeChatId}`), { text: input.value, senderId: myRoll, timestamp: Date.now(), seen: false });
+            push(ref(rtdb, `chats/${activeChatId}`), { 
+                text: input.value, 
+                senderId: myRoll, 
+                timestamp: Date.now(), 
+                seen: false 
+            });
         }
         input.value = "";
     };
 
-    window.deleteMsg = () => { if(confirm("Delete message?")) remove(ref(rtdb, `chats/${activeChatId}/${selectedKey}`)); };
+    window.deleteMsg = () => { if(confirm("Delete for everyone?")) remove(ref(rtdb, `chats/${activeChatId}/${selectedKey}`)); };
+    
     window.startEdit = () => {
         onValue(ref(rtdb, `chats/${activeChatId}/${selectedKey}`), (s) => {
             document.getElementById('msgInput').value = s.val().text;
