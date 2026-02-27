@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Admin | Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #002147; --accent: #ff9933; --danger: #d32f2f; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f2f5; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; max-width: 1400px; margin: auto; }
+        .panel { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .panel-full { grid-column: span 2; }
+        
+        h2 { border-left: 5px solid var(--primary); padding-left: 15px; color: var(--primary); font-size: 18px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; }
+        .btn-add { background: var(--primary); }
+        .btn-alert { background: var(--danger); }
+        
+        .feed { max-height: 300px; overflow-y: auto; font-size: 13px; }
+        .feed-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        
+        .req-card { background: #fff9f0; border: 1px solid var(--accent); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align:center; color: var(--primary)">LIBRARY ADMIN CONSOLE</h1>
+
+    <div class="grid">
+        <div class="panel">
+            <h2>Publish New Content</h2>
+            <input type="text" id="bTitle" placeholder="Title">
+            <input type="text" id="bLink" placeholder="URL Link">
+            <select id="bCat">
+                <option value="Notes">Notes</option>
+                <option value="Books">Books</option>
+            </select>
+            <button class="btn btn-add" onclick="publish()">Add to Library</button>
+        </div>
+
+        <div class="panel">
+            <h2>Live Download Feed</h2>
+            <div id="auditFeed" class="feed">Waiting for activity...</div>
+        </div>
+
+        <div class="panel panel-full" style="background: #fff5f5;">
+            <h2 style="border-color: var(--danger)">Global Alert Broadcast</h2>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="bcMsg" placeholder="Type message to send to all students...">
+                <button class="btn btn-alert" style="width:200px" onclick="broadcast()">Send Alert</button>
+            </div>
+        </div>
+
+        <div class="panel panel-full">
+            <h2>Pending Student Requests</h2>
+            <div id="reqContainer"></div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+        authDomain: "cse-5-cse.firebaseapp.com",
+        projectId: "cse-5-cse",
+        databaseURL: "https://cse-5-cse-default-rtdb.firebaseio.com/",
+        appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Broadcast
+    window.broadcast = () => {
+        const msg = document.getElementById('bcMsg').value;
+        if(msg) set(ref(db, 'broadcast'), { message: msg, timestamp: serverTimestamp() }).then(() => alert("Sent!"));
+    };
+
+    // Publish
+    window.publish = () => {
+        const name = document.getElementById('bTitle').value;
+        const link = document.getElementById('bLink').value;
+        const cat = document.getElementById('bCat').value;
+        push(ref(db, 'library'), { name, link, category: cat });
+        alert("Published!");
+    };
+
+    // Load Audit Logs
+    onValue(ref(db, 'audit_logs'), (snap) => {
+        const feed = document.getElementById('auditFeed');
+        feed.innerHTML = "";
+        snap.forEach(c => {
+            const l = c.val();
+            feed.innerHTML = `<div class="feed-item"><span><b>${l.rollNo}</b>: ${l.document}</span> <span>${new Date(l.timestamp).toLocaleTimeString()}</span></div>` + feed.innerHTML;
+        });
+    });
+
+    // Load Requests
+    onValue(ref(db, 'book_requests'), (snap) => {
+        const container = document.getElementById('reqContainer');
+        container.innerHTML = snap.exists() ? "" : "No requests.";
+        snap.forEach(c => {
+            const r = c.val();
+            container.innerHTML += `
+                <div class="req-card">
+                    <div><b>${r.bookTitle}</b><br><small>By: ${r.requestedBy} (${r.rollNo})</small></div>
+                    <button onclick="delReq('${c.key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Remove</button>
+                </div>
+            `;
+        });
+    });
+
+    window.delReq = (id) => remove(ref(db, `book_requests/${id}`));
+</script>
+</body>
+</html>

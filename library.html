@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Library | Student Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #002147; --accent: #ff9933; --success: #138808; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f4f7fa; margin: 0; }
+        
+        /* Premium Broadcast Alert */
+        .broadcast-alert {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; background: #d32f2f; color: white; padding: 15px 30px;
+            border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            font-weight: 700; display: none; border: 2px solid white;
+            animation: slideDown 0.5s ease forwards;
+        }
+        @keyframes slideDown { from { top: -100px; } to { top: 20px; } }
+
+        .header { background: white; padding: 15px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        
+        .search-bar { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 25px; font-size: 16px; }
+        
+        .lib-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .lib-table th { background: var(--primary); color: white; padding: 15px; text-align: left; }
+        .lib-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        
+        .btn-view { background: var(--success); color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 13px; }
+        
+        .request-box { background: white; padding: 25px; border-radius: 15px; margin-top: 30px; border-left: 5px solid var(--accent); }
+        .btn-req { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+        
+        #authOverlay { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+    </style>
+</head>
+<body>
+
+    <div id="globalAlert" class="broadcast-alert"></div>
+
+    <div id="authOverlay">
+        <h2 style="color: var(--primary)">Secure Library Access</h2>
+        <button class="btn-req" onclick="window.location.href='login.html'">Login to Access</button>
+    </div>
+
+    <div id="appBody" style="display:none">
+        <header class="header">
+            <div>
+                <h2 style="margin:0; color:var(--primary)">CSE DIGITAL LIBRARY</h2>
+                <small id="userDisplay">Welcome, Student</small>
+            </div>
+            <button onclick="handleLogout()" style="border:none; background:none; color:red; cursor:pointer;">Logout</button>
+        </header>
+
+        <div class="container">
+            <input type="text" class="search-bar" id="searchInput" placeholder="Search for books, notes, or papers..." onkeyup="filterData()">
+            
+            <table class="lib-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="libBody"></tbody>
+            </table>
+
+            <div class="request-box">
+                <h3>Request a Resource</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="reqInput" placeholder="Book Name..." style="flex:1; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                    <button class="btn-req" onclick="sendRequest()">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBFuPBD3IZWiklbRdW0IS78Xr2MHmqK2nU",
+        authDomain: "cse-5-cse.firebaseapp.com",
+        projectId: "cse-5-cse",
+        databaseURL: "https://cse-5-cse-default-rtdb.firebaseio.com/",
+        appId: "1:385090633983:web:24dc98e6c58279dd520cca"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const fs = getFirestore(app);
+
+    let userData = null;
+    let allBooks = [];
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const q = query(collection(fs, "students"), where("email", "==", user.email));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                userData = snap.docs[0].data();
+                document.getElementById('userDisplay').innerText = `Welcome, ${userData.name}`;
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('appBody').style.display = 'block';
+                initLibrary();
+            }
+        }
+    });
+
+    function initLibrary() {
+        onValue(ref(db, 'library'), (snap) => {
+            allBooks = [];
+            snap.forEach(c => { allBooks.push(c.val()); });
+            render(allBooks);
+        });
+
+        // Broadcast Listener
+        onValue(ref(db, 'broadcast'), (snap) => {
+            if (snap.exists()) {
+                const alertBox = document.getElementById('globalAlert');
+                alertBox.innerText = "📢 " + snap.val().message;
+                alertBox.style.display = "block";
+                setTimeout(() => alertBox.style.display = "none", 8000);
+            }
+        });
+    }
+
+    function render(data) {
+        document.getElementById('libBody').innerHTML = data.map(b => `
+            <tr>
+                <td><b>${b.name}</b></td>
+                <td>${b.category}</td>
+                <td><a href="${b.link}" target="_blank" class="btn-view" onclick="logDl('${b.name}')">Download</a></td>
+            </tr>
+        `).join('');
+    }
+
+    window.logDl = (name) => {
+        push(ref(db, 'audit_logs'), {
+            studentName: userData.name,
+            rollNo: userData.rollNo,
+            document: name,
+            timestamp: serverTimestamp()
+        });
+    };
+
+    window.sendRequest = () => {
+        const val = document.getElementById('reqInput').value;
+        if(!val) return;
+        push(ref(db, 'book_requests'), {
+            bookTitle: val,
+            requestedBy: userData.name,
+            rollNo: userData.rollNo,
+            timestamp: serverTimestamp()
+        });
+        alert("Requested!");
+        document.getElementById('reqInput').value = "";
+    };
+
+    window.handleLogout = () => signOut(auth).then(() => window.location.reload());
+</script>
+</body>
+</html>
